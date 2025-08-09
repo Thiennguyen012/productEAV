@@ -17,13 +17,31 @@ class AdminProductController extends Controller
         $this->categoryService = $categoryService;
     }
 
-    public function index(){
+    public function index()
+    {
         $products = $this->productService->listProduct();
-        return view('Admin.products',compact('products'));
+        return view('Admin.products', compact('products'));
     }
-    public function newProduct(Request $request){
+    public function newProduct(Request $request)
+    {
         $this->productService->newProduct($request);
-        return redirect()->back()->with('success','Tạo mới sản phẩm thành công!');
+        return redirect()->back()->with('success', 'Tạo mới sản phẩm thành công!');
+    }
+    public function edit($id)
+    {
+        $product = $this->productService->getProductForEdit($id);
+        $categories = $this->categoryService->getCategoriesList();
+
+        return view('Admin.updateProduct', compact('product', 'categories'));
     }
 
+    public function update(Request $request, $id)
+    {
+        try {
+            $this->productService->updateProduct($request, $id);
+            return redirect()->back()->with('success', 'Sản phẩm đã được cập nhật!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
+    }
 }

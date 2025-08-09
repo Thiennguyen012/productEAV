@@ -16,9 +16,11 @@ Route::prefix('/products')->name('products.')->group(function () {
 
 Route::prefix('admin')->name('Admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index']);
-    Route::prefix('/products')->name('products.')->group(function(){
+    Route::prefix('/products')->name('products.')->group(function () {
         Route::get('/', [AdminProductController::class, 'index'])->name('list');
-        Route::get('/new',[AdminController::class,'showNewProduct'])->name('showNew');
-        Route::post('/new',[AdminProductController::class,'newProduct'])->name('new');
+        Route::get('/new', [AdminController::class, 'showNewProduct'])->name('showNew');
+        Route::post('/new', [AdminProductController::class, 'newProduct'])->name('new');
+        Route::get('/{id}/edit', [AdminProductController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AdminProductController::class, 'update'])->name('update');
     });
 });
