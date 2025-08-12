@@ -82,6 +82,34 @@ class ProductRepo extends BaseRepo implements IProductRepo
     }
 
     /**
+     * Delete product variants by option IDs
+     * Xóa các product variants có chứa bất kỳ option nào trong danh sách optionIds
+     */
+    public function deleteProductVariantByOptionIds($optionIds)
+    {
+        // Lấy danh sách variant IDs có chứa các options này
+        $variantIds = DB::table('product_variant_value')
+            ->whereIn('variant_option_id', $optionIds)
+            ->pluck('product_variant_id')
+            ->unique()
+            ->toArray();
+
+        if (!empty($variantIds)) {
+            // Xóa tất cả variant values của các variants này
+            DB::table('product_variant_value')
+                ->whereIn('product_variant_id', $variantIds)
+                ->delete();
+
+            // Xóa các variants trong bảng product_variant
+            return DB::table('product_variant')
+                ->whereIn('id', $variantIds)
+                ->delete();
+        }
+
+        return 0;
+    }
+
+    /**
      * Create product variant
      */
     public function createVariant($data)
@@ -125,5 +153,80 @@ class ProductRepo extends BaseRepo implements IProductRepo
         }
 
         return false;
+    }
+
+    /**
+     * Get all product variants by product ID (simple version)
+     */
+    public function getProductVariantsById($productId)
+    {
+        return DB::table('product_variant')
+            ->where('product_id', $productId)
+            ->select('id', 'sku', 'price', 'quantity')
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Get product variants with their options (detailed version)
+     */
+    public function getProductVariantsWithOptions($productId)
+    {
+        return DB::table('product_variant')
+            ->join('product_variant_value', 'product_variant.id', '=', 'product_variant_value.product_variant_id')
+            ->join('variant_option', 'product_variant_value.variant_option_id', '=', 'variant_option.id')
+            ->join('variant_group', 'variant_option.variant_group_id', '=', 'variant_group.id')
+            ->where('product_variant.product_id', $productId)
+            ->select(
+                'product_variant.id',
+                'product_variant.price',
+                'product_variant.quantity',
+                'product_variant.sku',
+                'variant_option.id as option_id',
+                'variant_option.value as option_value',
+                'variant_group.id as group_id',
+                'variant_group.name as group_name'
+            )
+            ->get()
+            ->groupBy('id')
+            ->map(function ($variantData, $variantId) {
+                $firstItem = $variantData->first();
+                return [
+                    'id' => $variantId,
+                    'price' => $firstItem->price,
+                    'quantity' => $firstItem->quantity,
+                    'sku' => $firstItem->sku,
+                    'options' => $variantData->map(function ($item) {
+                        return (object) [
+                            'id' => $item->option_id,
+                            'value' => $item->option_value,
+                            'variant_group_id' => $item->group_id,
+                            'group_name' => $item->group_name
+                        ];
+                    })->toArray()
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Delete variant values by variant IDs (multiple variants)
+     */
+    public function deleteVariantValuesByVariantIds($variantIds)
+    {
+        return DB::table('product_variant_value')
+            ->whereIn('product_variant_id', $variantIds)
+            ->delete();
+    }
+
+    /**
+     * Delete variants by IDs
+     */
+    public function deleteVariantsByIds($variantIds)
+    {
+        return DB::table('product_variant')
+            ->whereIn('id', $variantIds)
+            ->delete();
     }
 }

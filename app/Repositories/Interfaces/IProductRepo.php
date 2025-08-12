@@ -12,8 +12,13 @@ interface IProductRepo extends IBaseRepo
 
     // Variant-related methods
     public function deleteVariantValuesByOptionIds($optionIds);
+    public function deleteProductVariantByOptionIds($optionIds);
     public function deleteVariantValuesByGroupIds($groupIds);
     public function createVariant($data);
     public function createVariantValue($data);
     public function variantExistsWithOptions($productId, $optionIds);
+    public function getProductVariantsById($productId);
+    public function getProductVariantsWithOptions($productId);
+    public function deleteVariantValuesByVariantIds($variantIds);
+    public function deleteVariantsByIds($variantIds);
 }

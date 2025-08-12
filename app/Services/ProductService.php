@@ -36,11 +36,14 @@ class ProductService implements IProductService
     // Hàm sinh SKU tự động
     protected function generateSku($product, $optionIds)
     {
+        // Xử lý trường hợp $product có thể là object hoặc ID
+        $productId = is_object($product) ? $product->id : $product;
+
         // Lấy tên option, nối lại thành SKU theo format: product_id-option1-option2-...
         $optionNames = \App\Models\Product\VariantOption::whereIn('id', $optionIds)->pluck('value')->toArray();
 
         // Bắt đầu SKU bằng ID sản phẩm
-        $sku = $product->id;
+        $sku = $productId;
 
         if (!empty($optionNames)) {
             // Thêm các option vào SKU: product_id-option1-option2-...
@@ -176,6 +179,9 @@ class ProductService implements IProductService
             // 4. Tự động tạo variants mới từ combinations
             $this->regenerateProductVariants($product);
 
+            // 5. Cleanup các variants không hợp lệ (không phải tổ hợp của tất cả groups)
+            $this->cleanupInvalidVariants($product->id);
+
             DB::commit();
             return $product;
         } catch (\Exception $e) {
@@ -273,8 +279,8 @@ class ProductService implements IProductService
         $optionIdsToDelete = array_diff($currentOptionIds, $existingOptionIds);
 
         if (!empty($optionIdsToDelete)) {
-            // Xóa các variant values liên quan trước
-            $this->productRepo->deleteVariantValuesByOptionIds($optionIdsToDelete);
+            // Xóa các variant trong bảng product_variant trước (bao gồm cả variant values)
+            $this->productRepo->deleteProductVariantByOptionIds($optionIdsToDelete);
 
             // Sau đó xóa các options
             $this->variantOptionRepo->deleteByIds($optionIdsToDelete);
@@ -289,14 +295,80 @@ class ProductService implements IProductService
         $groupIdsToDelete = array_diff($currentGroupIds, $existingGroupIds);
 
         if (!empty($groupIdsToDelete)) {
-            // Xóa các variant values liên quan
-            $this->productRepo->deleteVariantValuesByGroupIds($groupIdsToDelete);
+            // 1. Xóa tất cả variants hiện tại của product
+            $allVariants = $this->productRepo->getProductVariantsById($productId);
+            if (!empty($allVariants)) {
+                $variantIds = collect($allVariants)->pluck('id')->toArray();
+                $this->productRepo->deleteVariantValuesByVariantIds($variantIds);
+                $this->productRepo->deleteVariantsByIds($variantIds);
+            }
 
-            // Xóa các options của groups
+            // 2. Xóa các options của groups bị xóa
             $this->variantOptionRepo->deleteByGroupIds($groupIdsToDelete);
 
-            // Xóa các groups
+            // 3. Xóa các groups
             $this->variantGroupRepo->deleteByIds($groupIdsToDelete);
+
+            // 4. Tạo lại variants mới từ các groups còn lại
+            $this->regenerateVariantsFromRemainingGroups($productId);
+        }
+    }
+
+    /**
+     * Tạo lại variants từ các groups còn lại sau khi xóa group
+     */
+    private function regenerateVariantsFromRemainingGroups($productId)
+    {
+        // Lấy tất cả groups còn lại
+        $remainingGroups = $this->variantGroupRepo->getGroupsWithOptionsByProductId($productId);
+
+        if (empty($remainingGroups)) {
+            // Không còn groups nào, không tạo variants
+            return;
+        }
+
+        // Tạo cartesian product từ các groups còn lại
+        $allOptions = [];
+        foreach ($remainingGroups as $group) {
+            $groupOptions = [];
+            foreach ($group->options as $option) {
+                $groupOptions[] = $option->id;
+            }
+            if (!empty($groupOptions)) {
+                $allOptions[] = $groupOptions;
+            }
+        }
+
+        if (empty($allOptions)) {
+            return;
+        }
+
+        // Tạo combinations
+        $combinations = $this->cartesianProduct($allOptions);
+
+        // Tạo variants mới
+        foreach ($combinations as $combination) {
+            // Tạo SKU từ option IDs
+            $sku = $this->generateSku($productId, $combination);
+
+            // Tạo variant
+            $variantId = $this->productRepo->createVariant([
+                'product_id' => $productId,
+                'sku' => $sku,
+                'price' => 0, // Giá mặc định
+                'compare_at_price' => 0,
+                'quantity' => 0, // Số lượng mặc định
+                'is_active' => 'true',
+                'image' => 'default-variant.jpg'
+            ]);
+
+            // Tạo variant values
+            foreach ($combination as $optionId) {
+                $this->productRepo->createVariantValue([
+                    'product_variant_id' => $variantId,
+                    'variant_option_id' => $optionId
+                ]);
+            }
         }
     }
 
@@ -382,5 +454,73 @@ class ProductService implements IProductService
         }
 
         return $result;
+    }
+
+    /**
+     * Xóa các variants cũ không phải là tổ hợp hợp lệ của tất cả option groups hiện tại
+     */
+    public function cleanupInvalidVariants($productId)
+    {
+        // Lấy tất cả variant groups của product
+        $groups = $this->variantGroupRepo->getGroupsWithOptionsByProductId($productId);
+
+        if (empty($groups)) {
+            // Nếu không có groups nào, xóa tất cả variants
+            $allVariants = $this->productRepo->getProductVariantsById($productId);
+            if (!empty($allVariants)) {
+                $variantIds = collect($allVariants)->pluck('id')->toArray();
+                $this->productRepo->deleteVariantValuesByVariantIds($variantIds);
+                $this->productRepo->deleteVariantsByIds($variantIds);
+            }
+            return;
+        }
+
+        // Tạo tất cả tổ hợp hợp lệ (cartesian product)
+        $allOptions = [];
+        foreach ($groups as $group) {
+            $groupOptions = [];
+            foreach ($group->options as $option) {
+                $groupOptions[] = $option->id;
+            }
+            if (!empty($groupOptions)) {
+                $allOptions[] = $groupOptions;
+            }
+        }
+
+        if (empty($allOptions)) {
+            return;
+        }
+
+        // Tạo cartesian product của tất cả option IDs
+        $validCombinations = $this->cartesianProduct($allOptions);
+
+        // Chuẩn hóa các combinations thành set để so sánh
+        $validSets = [];
+        foreach ($validCombinations as $combination) {
+            sort($combination); // Sort để đảm bảo thứ tự nhất quán
+            $validSets[] = implode(',', $combination);
+        }
+
+        // Lấy tất cả variants hiện tại của product
+        $existingVariants = $this->productRepo->getProductVariantsWithOptions($productId);
+
+        $invalidVariantIds = [];
+        foreach ($existingVariants as $variant) {
+            // Lấy option IDs của variant hiện tại
+            $variantOptionIds = collect($variant['options'])->pluck('id')->toArray();
+            sort($variantOptionIds);
+            $variantSet = implode(',', $variantOptionIds);
+
+            // Kiểm tra xem variant này có phải là tổ hợp hợp lệ không
+            if (!in_array($variantSet, $validSets)) {
+                $invalidVariantIds[] = $variant['id'];
+            }
+        }
+
+        // Xóa các variants không hợp lệ
+        if (!empty($invalidVariantIds)) {
+            $this->productRepo->deleteVariantValuesByVariantIds($invalidVariantIds);
+            $this->productRepo->deleteVariantsByIds($invalidVariantIds);
+        }
     }
 }
