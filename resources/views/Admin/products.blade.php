@@ -369,15 +369,15 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button class="btn btn-outline-info btn-action" title="Xem chi tiết">
+                                            <a class="btn btn-outline-info btn-action" title="Xem chi tiết">
                                                 <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-outline-warning btn-action" title="Chỉnh sửa">
+                                            </a>
+                                            <a class="btn btn-outline-warning btn-action" title="Chỉnh sửa" href="{{ route('Admin.products.edit',['id' => $product->id]) }}">
                                                 <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-action" title="Xóa">
+                                            </a>
+                                            <a class="btn btn-outline-danger btn-action" title="Xóa">
                                                 <i class="fas fa-trash"></i>
-                                            </button>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

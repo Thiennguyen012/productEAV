@@ -181,10 +181,17 @@
                     <div class="action-buttons">
                         <div class="row g-2">
                             <div class="col-12">
-                                <button class="btn btn-primary btn-lg w-100" id="addToCartBtn" disabled>
-                                    <i class="fas fa-shopping-cart me-2"></i>
-                                    Thêm vào giỏ hàng
-                                </button>
+                                @if($product->is_active === 'false')
+                                    <button class="btn btn-secondary btn-lg w-100" disabled>
+                                        <i class="fas fa-ban me-2"></i>
+                                        Sản phẩm ngừng bán
+                                    </button>
+                                @else
+                                    <button class="btn btn-primary btn-lg w-100" id="addToCartBtn" disabled>
+                                        <i class="fas fa-shopping-cart me-2"></i>
+                                        Thêm vào giỏ hàng
+                                    </button>
+                                @endif
                             </div>
                             <div class="col-6">
                                 <button class="btn btn-outline-danger w-100">
@@ -258,14 +265,20 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    @if($variant->is_active === 'true' && $variant->quantity > 0)
+                                                    @if($product->is_active === 'false')
+                                                        <span class="badge bg-secondary">Sản phẩm ngừng bán</span>
+                                                    @elseif($variant->is_active === 'true' && $variant->quantity > 0)
                                                         <span class="badge bg-success">Có sẵn</span>
                                                     @else
                                                         <span class="badge bg-danger">Hết hàng</span>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    @if($variant->is_active === 'true' && $variant->quantity > 0)
+                                                    @if($product->is_active === 'false')
+                                                        <button class="btn btn-sm btn-secondary" disabled>
+                                                            Ngừng bán
+                                                        </button>
+                                                    @elseif($variant->is_active === 'true' && $variant->quantity > 0)
                                                         <button class="btn btn-sm btn-outline-primary select-variant-btn" 
                                                                 data-variant-data="{{ json_encode($variant) }}">
                                                             Chọn
@@ -483,11 +496,17 @@
         }
 
         function enableAddToCart() {
-            document.getElementById('addToCartBtn').disabled = false;
+            const addToCartBtn = document.getElementById('addToCartBtn');
+            if (addToCartBtn) {
+                addToCartBtn.disabled = false;
+            }
         }
 
         function disableAddToCart() {
-            document.getElementById('addToCartBtn').disabled = true;
+            const addToCartBtn = document.getElementById('addToCartBtn');
+            if (addToCartBtn) {
+                addToCartBtn.disabled = true;
+            }
         }
 
         // New function to update available options based on current selection
