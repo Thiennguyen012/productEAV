@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,7 @@ Route::prefix('/products')->name('products.')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('showAll');
     Route::get('/{slug}', [ProductController::class, 'getProductDetail'])->name('detail');
 });
+Route::get('/cart', [CartController::class, 'showCart'])->name('cart');
 
 Route::prefix('admin')->name('Admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index']);

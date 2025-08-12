@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Repositories\CartItemRepo;
+use App\Repositories\CartRepo;
 use App\Repositories\CategoryRepo;
+use App\Repositories\Interfaces\ICartItemRepo;
+use App\Repositories\Interfaces\ICartRepo;
 use App\Repositories\Interfaces\ICategoryRepo;
 use App\Repositories\Interfaces\IProductRepo;
 use App\Repositories\Interfaces\IVariantGroupRepo;
@@ -23,6 +27,8 @@ class RepositoryProvider extends ServiceProvider
         $this->app->bind(IVariantGroupRepo::class, VariantGroupRepo::class);
         $this->app->bind(IVariantOptionRepo::class, VariantOptionRepo::class);
         $this->app->bind(ICategoryRepo::class, CategoryRepo::class);
+        $this->app->bind(ICartRepo::class, CartRepo::class);
+        $this->app->bind(ICartItemRepo::class, CartItemRepo::class);
     }
 
     /**

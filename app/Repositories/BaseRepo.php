@@ -27,6 +27,10 @@ abstract class BaseRepo implements IBaseRepo
         return $this->model->find($id);
     }
 
+    public function findByCond(array $conditions){
+        return $this->model->where($conditions);
+    }
+
     public function create(array $data)
     {
         return $this->model->create($data);
