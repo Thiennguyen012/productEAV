@@ -16,31 +16,9 @@ class CartController extends Controller
         $this->cartItemService = $cartItemService;
     }
 
-    public function getCurrSession(Request $request)
-    {
-        // Tạo hoặc lấy session cart ID
-        if (!$request->session()->has('cart_session_id')) {
-            // Nếu chưa có session cart, tạo mới
-            $session_id = 'cart_' . uniqid() . '_' . time();
-            $request->session()->put('cart_session_id', $session_id);
-        } else {
-            // Lấy session cart ID đã có
-            $session_id = $request->session()->get('cart_session_id');
-        }
-        return $session_id;
-    }
-
     public function showCart(Request $request)
     {
-        // Tạo hoặc lấy session cart ID
-        if (!$request->session()->has('cart_session_id')) {
-            // Nếu chưa có session cart, tạo mới
-            $session_id = 'cart_' . uniqid() . '_' . time();
-            $request->session()->put('cart_session_id', $session_id);
-        } else {
-            // Lấy session cart ID đã có
-            $session_id = $request->session()->get('cart_session_id');
-        }
+        $session_id = $this->getCurrSession($request);
 
         $cart = $this->cartService->showCart($session_id);
         return view('cart', compact('cart'));

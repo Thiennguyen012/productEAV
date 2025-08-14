@@ -8,7 +8,11 @@ use App\Services\CategoryService;
 use App\Services\Interfaces\ICartItemService;
 use App\Services\Interfaces\ICartService;
 use App\Services\Interfaces\ICategoryService;
+use App\Services\Interfaces\IOrderItemService;
+use App\Services\Interfaces\IOrderService;
 use App\Services\Interfaces\IProductService;
+use App\Services\OrderItemService;
+use App\Services\OrderService;
 use App\Services\ProductService;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +27,8 @@ class ServicesProvider extends ServiceProvider
         $this->app->bind(ICategoryService::class, CategoryService::class);
         $this->app->bind(ICartService::class, CartService::class);
         $this->app->bind(ICartItemService::class, CartItemService::class);
+        $this->app->bind(IOrderService::class, OrderService::class);
+        $this->app->bind(IOrderItemService::class, OrderItemService::class);
     }
 
     /**
