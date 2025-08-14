@@ -63,4 +63,13 @@ class CartService implements ICartService
             }
         }
     }
+    public function getCartCount($session_id)
+    {
+        $cart = $this->cartRepo->findByCond(['session_id' => $session_id])->first();
+        if (!$cart) {
+            return 0;
+        }
+
+        return $cart->cartItems()->sum('quantity');
+    }
 }

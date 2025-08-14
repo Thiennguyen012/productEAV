@@ -13,8 +13,16 @@ Route::get('/', function () {
 Route::prefix('/products')->name('products.')->group(function () {
     Route::get('/', [ProductController::class, 'index'])->name('showAll');
     Route::get('/{slug}', [ProductController::class, 'getProductDetail'])->name('detail');
+    Route::post('/{slug}', [CartController::class, 'addToCart'])->name('addCart');
 });
-Route::get('/cart', [CartController::class, 'showCart'])->name('cart');
+
+
+Route::prefix('/cart')->name('cart.')->group(function () {
+    Route::get('/', [CartController::class, 'showCart'])->name('show');
+    Route::post('/add', [CartController::class, 'addToCart'])->name('add');
+    Route::put('/update/{id}', [CartController::class, 'updateItem'])->name('update');
+    Route::delete('remove/{id}',[CartController::class, 'deleteCartItem'])->name('remove');
+});
 
 Route::prefix('admin')->name('Admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index']);

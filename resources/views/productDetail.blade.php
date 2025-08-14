@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $product->product_name ?? 'Chi tiết sản phẩm' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -187,10 +188,31 @@
                                         Sản phẩm ngừng bán
                                     </button>
                                 @else
-                                    <button class="btn btn-primary btn-lg w-100" id="addToCartBtn" disabled>
-                                        <i class="fas fa-shopping-cart me-2"></i>
-                                        Thêm vào giỏ hàng
-                                    </button>
+                                    <form id="addToCartForm" method="POST">
+                                        @csrf
+                                        <input type="hidden" id="selectedProductVariantId" name="product_variant_id" value="">
+                                        <input type="hidden" id="selectedQuantity" name="quantity" value="1">
+                                        
+                                        <!-- Quantity Selector -->
+                                        <div class="mb-3">
+                                            <label for="quantityInput" class="form-label">Số lượng:</label>
+                                            <div class="input-group" style="max-width: 150px;">
+                                                <button class="btn btn-outline-secondary" type="button" id="decreaseQty">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="number" class="form-control text-center" id="quantityInput" 
+                                                       value="1" min="1" max="999" readonly>
+                                                <button class="btn btn-outline-secondary" type="button" id="increaseQty">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary btn-lg w-100" id="addToCartBtn" disabled>
+                                            <i class="fas fa-shopping-cart me-2"></i>
+                                            <span id="btnText">Thêm vào giỏ hàng</span>
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                             <div class="col-6">
@@ -453,6 +475,9 @@
             const comparePriceDisplay = document.getElementById('comparePriceDisplay');
             const stockStatus = document.getElementById('stockStatus');
 
+            // Update hidden form inputs
+            document.getElementById('selectedProductVariantId').value = variant.id;
+            
             // Show selected variant info
             detailsDiv.innerHTML = `
                 <strong>SKU:</strong> ${variant.sku}<br>
@@ -651,6 +676,124 @@
         // Initialize available options on page load (hide options without stock)
         document.addEventListener('DOMContentLoaded', function() {
             updateAvailableOptions();
+            
+            // Quantity controls
+            const decreaseBtn = document.getElementById('decreaseQty');
+            const increaseBtn = document.getElementById('increaseQty');
+            const quantityInput = document.getElementById('quantityInput');
+            const selectedQuantityHidden = document.getElementById('selectedQuantity');
+            
+            if (decreaseBtn && increaseBtn && quantityInput) {
+                decreaseBtn.addEventListener('click', function() {
+                    let currentValue = parseInt(quantityInput.value);
+                    if (currentValue > 1) {
+                        currentValue--;
+                        quantityInput.value = currentValue;
+                        selectedQuantityHidden.value = currentValue;
+                    }
+                });
+                
+                increaseBtn.addEventListener('click', function() {
+                    let currentValue = parseInt(quantityInput.value);
+                    if (currentValue < 999) {
+                        currentValue++;
+                        quantityInput.value = currentValue;
+                        selectedQuantityHidden.value = currentValue;
+                    }
+                });
+                
+                // Update hidden input when quantity input changes directly
+                quantityInput.addEventListener('change', function() {
+                    let value = parseInt(this.value);
+                    if (value < 1) value = 1;
+                    if (value > 999) value = 999;
+                    this.value = value;
+                    selectedQuantityHidden.value = value;
+                });
+            }
+            
+            // Form submission handler
+            const addToCartForm = document.getElementById('addToCartForm');
+            if (addToCartForm) {
+                addToCartForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    const submitBtn = document.getElementById('addToCartBtn');
+                    const btnText = document.getElementById('btnText');
+                    const originalText = btnText.textContent;
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    btnText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang thêm...';
+                    
+                    fetch('/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            product_variant_id: formData.get('product_variant_id'),
+                            quantity: parseInt(formData.get('quantity'))
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            btnText.innerHTML = '<i class="fas fa-check me-2"></i>Đã thêm!';
+                            btnText.className = 'text-success';
+                            
+                            // Show toast notification
+                            if (typeof bootstrap !== 'undefined') {
+                                // If Bootstrap is available, show toast
+                                const toastHtml = `
+                                    <div class="toast align-items-center text-white bg-success border-0" role="alert" 
+                                         style="position: fixed; top: 20px; right: 20px; z-index: 1050;">
+                                        <div class="d-flex">
+                                            <div class="toast-body">
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                Đã thêm sản phẩm vào giỏ hàng!
+                                            </div>
+                                            <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                                                    data-bs-dismiss="toast"></button>
+                                        </div>
+                                    </div>
+                                `;
+                                document.body.insertAdjacentHTML('beforeend', toastHtml);
+                                const toast = new bootstrap.Toast(document.querySelector('.toast:last-child'));
+                                toast.show();
+                            } else {
+                                alert('Đã thêm sản phẩm vào giỏ hàng!');
+                            }
+                            
+                            // Reset button after 2 seconds
+                            setTimeout(() => {
+                                submitBtn.disabled = false;
+                                btnText.textContent = originalText;
+                                btnText.className = '';
+                            }, 2000);
+                        } else {
+                            throw new Error(data.message || 'Có lỗi xảy ra');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        btnText.textContent = 'Lỗi!';
+                        btnText.className = 'text-danger';
+                        
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                            btnText.textContent = originalText;
+                            btnText.className = '';
+                        }, 2000);
+                        
+                        alert('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!');
+                    });
+                });
+            }
         });
     </script>
 </body>

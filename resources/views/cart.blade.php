@@ -142,90 +142,137 @@
 
                     <div id="cartItemsContainer">
                         @foreach($cart as $item)
-                            <div class="cart-item" data-item-id="{{ $item->id }}">
-                                <div class="row align-items-center">
-                                    <!-- Product Image -->
-                                    <div class="col-md-2">
-                                        @if($item->productVariant && $item->productVariant->product)
-                                            <img src="{{ asset('images/' . $item->productVariant->product->image) }}" 
-                                                 alt="{{ $item->productVariant->product->product_name }}"
-                                                 class="product-image">
-                                        @else
-                                            <div class="product-image bg-secondary d-flex align-items-center justify-content-center">
-                                                <i class="fas fa-image text-white"></i>
-                                            </div>
-                                        @endif
-                                    </div>
+    <div class="cart-item mb-3 p-3 border rounded" data-item-id="{{ $item->id }}">
+        <div class="row align-items-center g-3">
+            <!-- Product Image -->
+            <div class="col-12 col-md-2">
+                @if($item->productVariant && $item->productVariant->product)
+                    <div class="text-center">
+                        <img src="{{ asset('images/' . $item->productVariant->product->image) }}" 
+                             alt="{{ $item->productVariant->product->product_name }}"
+                             class="product-image img-fluid rounded"
+                             style="max-width: 80px; max-height: 80px; object-fit: cover;">
+                    </div>
+                @else
+                    <div class="product-image bg-secondary d-flex align-items-center justify-content-center rounded mx-auto"
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-image text-white"></i>
+                    </div>
+                @endif
+            </div>
 
-                                    <!-- Product Info -->
-                                    <div class="col-md-4">
-                                        @if($item->productVariant && $item->productVariant->product)
-                                            <h6 class="mb-1">{{ $item->productVariant->product->product_name }}</h6>
-                                            <p class="text-muted mb-1 small">SKU: {{ $item->productVariant->sku }}</p>
-                                            
-                                            @if($item->productVariant->options && $item->productVariant->options->count() > 0)
-                                                <div class="variant-info">
-                                                    @foreach($item->productVariant->options as $option)
-                                                        <span class="badge bg-light text-dark me-1">{{ $option->value }}</span>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        @else
-                                            <h6 class="mb-1 text-muted">Sản phẩm không tồn tại</h6>
-                                        @endif
-                                    </div>
-
-                                    <!-- Price -->
-                                    <div class="col-md-2 text-center">
-                                        @if($item->productVariant)
-                                            <div class="price-text">
-                                                {{ number_format($item->productVariant->price, 0, ',', '.') }}₫
-                                            </div>
-                                        @else
-                                            <div class="text-muted">N/A</div>
-                                        @endif
-                                    </div>
-
-                                    <!-- Quantity -->
-                                    <div class="col-md-2 text-center">
-                                        <div class="quantity-control">
-                                            <button type="button" onclick="updateQuantity({{ $item->id }}, {{ $item->quantity - 1 }})">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <input type="number" 
-                                                   value="{{ $item->quantity }}" 
-                                                   min="1" 
-                                                   max="99"
-                                                   onchange="updateQuantity({{ $item->id }}, this.value)"
-                                                   class="form-control">
-                                            <button type="button" onclick="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Subtotal -->
-                                    <div class="col-md-1 text-center">
-                                        @if($item->productVariant)
-                                            <div class="price-text">
-                                                {{ number_format($item->productVariant->price * $item->quantity, 0, ',', '.') }}₫
-                                            </div>
-                                        @else
-                                            <div class="text-muted">N/A</div>
-                                        @endif
-                                    </div>
-
-                                    <!-- Remove -->
-                                    <div class="col-md-1 text-center">
-                                        <button class="btn btn-outline-danger btn-sm" 
-                                                onclick="removeItem({{ $item->id }})"
-                                                title="Xóa sản phẩm">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
+            <!-- Product Info -->
+            <div class="col-12 col-md-4">
+                @if($item->productVariant && $item->productVariant->product)
+                    <div class="product-details">
+                        <h6 class="mb-2 fw-bold">{{ $item->productVariant->product->product_name }}</h6>
+                        <p class="text-muted mb-2 small">
+                            <strong>SKU:</strong> {{ $item->productVariant->sku }}
+                        </p>
+                        
+                        @if($item->productVariant->options && $item->productVariant->options->count() > 0)
+                            <div class="variant-info mb-2">
+                                <small class="text-muted d-block mb-1">Phiên bản:</small>
+                                @foreach($item->productVariant->options as $option)
+                                    <span class="badge bg-light text-dark me-1 border">{{ $option->value }}</span>
+                                @endforeach
                             </div>
-                        @endforeach
+                        @endif
+                    </div>
+                @else
+                    <div class="product-details">
+                        <h6 class="mb-1 text-muted">Sản phẩm không tồn tại</h6>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Price per unit -->
+            <div class="col-6 col-md-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Đơn giá</small>
+                    @if($item->productVariant)
+                        <div class="price-text fw-bold text-primary">
+                            {{ number_format($item->productVariant->price, 0, ',', '.') }}₫
+                        </div>
+                    @else
+                        <div class="text-muted">N/A</div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Quantity Control -->
+            <div class="col-6 col-md-2">
+                <div class="text-center">
+                    <small class="text-muted d-block mb-2">Số lượng</small>
+                    <div class="quantity-control d-flex align-items-center justify-content-center">
+                        <button type="button" 
+                                class="btn btn-outline-secondary btn-sm"
+                                onclick="updateQuantity({{ $item->id }}, {{ $item->quantity - 1 }})"
+                                {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        
+                        <input type="number" 
+                               value="{{ $item->quantity }}" 
+                               min="1" 
+                               max="99"
+                               onchange="updateQuantity({{ $item->id }}, this.value)"
+                               class="form-control text-center mx-2"
+                               style="width: 60px;">
+                        
+                        <button type="button" 
+                                class="btn btn-outline-secondary btn-sm"
+                                onclick="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})"
+                                {{ $item->quantity >= 99 ? 'disabled' : '' }}>
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subtotal -->
+            <div class="col-8 col-md-1">
+                <div class="text-center">
+                    <small class="text-muted d-block">Tổng tiền</small>
+                    @if($item->productVariant)
+                        <div class="price-text fw-bold text-success">
+                            {{ number_format($item->productVariant->price * $item->quantity, 0, ',', '.') }}₫
+                        </div>
+                    @else
+                        <div class="text-muted">N/A</div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Remove Button -->
+            <div class="col-4 col-md-1">
+                <div class="text-center">
+                    <button class="btn btn-outline-danger btn-sm" 
+                            onclick="removeItem({{ $item->id }})"
+                            title="Xóa sản phẩm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile layout summary -->
+        <div class="d-md-none mt-3 pt-3 border-top">
+            <div class="row">
+                <div class="col-6">
+                    <small class="text-muted">Số lượng: {{ $item->quantity }}</small>
+                </div>
+                <div class="col-6 text-end">
+                    @if($item->productVariant)
+                        <strong class="text-success">
+                            {{ number_format($item->productVariant->price * $item->quantity, 0, ',', '.') }}₫
+                        </strong>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+@endforeach
                     </div>
                 </div>
 
