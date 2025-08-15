@@ -21,9 +21,14 @@ class ProductService implements IProductService
         $this->variantGroupRepo = $variantGroupRepo;
         $this->variantOptionRepo = $variantOptionRepo;
     }
-    public function listProduct()
+    public function listProduct(Request $request)
     {
-        $result = $this->productRepo->listProduct();
+        $productName = $request->input('product_name');
+        $category_id = $request->input('category_id');
+        $status = $request->input('status');
+        $sort = $request->input('sort');
+        $direction = $request->input('direction');
+        $result = $this->productRepo->listProduct($productName, $category_id, $status, $sort, $direction);
         return $result;
     }
     public function getProductWithVariants(Request $request)

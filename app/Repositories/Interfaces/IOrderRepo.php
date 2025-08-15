@@ -7,6 +7,8 @@ interface IOrderRepo extends IBaseRepo
     /**
      * Get cart by session ID with all related data
      */
+    public function getAllOrderWithItems($customer_name = null, $status = null, $sort = null, $direction = null);
+
     public function getCartBySession($session_id);
 
     /**

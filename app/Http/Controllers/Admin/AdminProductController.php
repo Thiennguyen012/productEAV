@@ -17,10 +17,11 @@ class AdminProductController extends Controller
         $this->categoryService = $categoryService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $products = $this->productService->listProduct();
-        return view('Admin.products', compact('products'));
+        $categories = $this->categoryService->getCategoriesList();
+        $products = $this->productService->listProduct($request);
+        return view('Admin.products', compact('products', 'categories'));
     }
     public function newProduct(Request $request)
     {

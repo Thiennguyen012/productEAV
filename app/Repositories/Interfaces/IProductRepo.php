@@ -4,7 +4,7 @@ namespace App\Repositories\Interfaces;
 
 interface IProductRepo extends IBaseRepo
 {
-    public function listProduct();
+    public function listProduct($productName = null, $category_id = null, $status = null, $sort = null, $direction = null);
     public function getProductWithVariants($slug);
     public function getProductWithVariantsById($id);
     public function getProductsByCategory($categoryId);

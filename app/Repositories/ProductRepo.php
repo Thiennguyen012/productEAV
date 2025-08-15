@@ -13,9 +13,32 @@ class ProductRepo extends BaseRepo implements IProductRepo
         parent::__construct($product);
     }
 
-    public function listProduct()
+    public function listProduct($productName = null, $category_id = null, $status = null, $sort = null, $direction = null)
     {
-        return $this->model->with(['category', 'variants.options', 'variantGroups.options'])->paginate(12);
+        $query =  $this->model->with(['category', 'variants.options', 'variantGroups.options']);
+        if($productName){
+            $query = $query->where('product_name', 'like', "%$productName%");
+        }
+        if($category_id){
+            $query = $query->where('category_id', $category_id);
+        }
+        if($status){
+            $query = $query->where('is_active', $status);
+        }
+        if($sort){
+            $direction = strtolower($direction) === 'desc' ? 'desc': 'asc';
+            switch($sort){
+                case 'product_name':
+                case 'category_id':
+                    $query = $query->orderBy($sort, $direction);
+                default:
+                    $query = $query->orderBy('id', $direction);
+            }
+        }
+        else{
+            $query = $query->orderBy('id','desc');
+        }
+        return $query->paginate(12);
     }
 
     public function getProductWithVariants($slug)

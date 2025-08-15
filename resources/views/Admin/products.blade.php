@@ -223,42 +223,84 @@
         <!-- Filter & Search -->
         <div class="card mb-4">
             <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Tìm kiếm</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" placeholder="Tên sản phẩm, SKU...">
+                <form method="GET" action="{{ request()->url() }}" id="filterForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Tìm kiếm</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" name="product_name" 
+                                       value="{{ request('product_name') }}"
+                                       placeholder="Tên sản phẩm, SKU...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Danh mục</label>
+                            <select class="form-select" name="category_id">
+                                <option value="">Tất cả danh mục</option>
+                                @if(isset($categories) && $categories)
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" 
+                                                {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                            {{ $category->category_name }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Trạng thái</label>
+                            <select class="form-select" name="status">
+                                <option value="">Tất cả</option>
+                                <option value="true" {{ request('status') === 'true' ? 'selected' : '' }}>Đang bán</option>
+                                <option value="false" {{ request('status') === 'false' ? 'selected' : '' }}>Ngừng bán</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-1"></i>
+                                Lọc
+                            </button>
+                            <a href="{{ request()->url() }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-1"></i>
+                                Reset
+                            </a>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Danh mục</label>
-                        <select class="form-select">
-                            <option value="">Tất cả danh mục</option>
-                            <!-- Categories will be populated from controller -->
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Trạng thái</label>
-                        <select class="form-select">
-                            <option value="">Tất cả</option>
-                            <option value="true">Đang bán</option>
-                            <option value="false">Ngừng bán</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button class="btn btn-primary me-2">
-                            <i class="fas fa-filter me-1"></i>
-                            Lọc
-                        </button>
-                        <button class="btn btn-outline-secondary">
-                            <i class="fas fa-redo me-1"></i>
-                            Reset
-                        </button>
-                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Filter Summary -->
+        @if(request()->hasAny(['product_name', 'category_id', 'status']))
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    <strong class="me-2">Bộ lọc đang áp dụng:</strong>
+                    @if(request('product_name'))
+                        <span class="badge bg-primary me-2">Tìm: {{ request('product_name') }}</span>
+                    @endif
+                    @if(request('category_id') && isset($categories))
+                        @php
+                            $selectedCategory = $categories->where('id', request('category_id'))->first();
+                        @endphp
+                        @if($selectedCategory)
+                            <span class="badge bg-success me-2">Danh mục: {{ $selectedCategory->category_name }}</span>
+                        @endif
+                    @endif
+                    @if(request('status'))
+                        <span class="badge bg-info me-2">
+                            Trạng thái: {{ request('status') === 'true' ? 'Đang bán' : 'Ngừng bán' }}
+                        </span>
+                    @endif
+                    <a href="{{ request()->url() }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                    </a>
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Products Table -->
         <div class="card">
@@ -402,7 +444,7 @@
 
                 <!-- Pagination -->
                 @if(method_exists($products, 'links'))
-                    {{ $products->links('pagination::custom') }}
+                    {{ $products->appends(request()->query())->links('pagination::custom') }}
                 @endif
             </div>
         </div>
@@ -436,6 +478,75 @@
             const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
+            });
+        });
+
+        // Form submit with loading state
+        document.getElementById('filterForm').addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang lọc...';
+        });
+
+        // Allow Enter key to submit form in search input
+        document.querySelector('input[name="product_name"]').addEventListener('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                document.getElementById('filterForm').submit();
+            }
+        });
+
+        // Product actions
+        function viewProduct(productId) {
+            // Add view product functionality
+            console.log('View product:', productId);
+        }
+
+        function editProduct(productId) {
+            window.location.href = `/admin/products/${productId}/edit`;
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                // Add delete functionality via AJAX
+                console.log('Delete product:', productId);
+            }
+        }
+
+        // Bulk actions
+        function performBulkAction(action) {
+            const selectedProducts = Array.from(document.querySelectorAll('tbody input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            if (selectedProducts.length === 0) {
+                alert('Vui lòng chọn ít nhất một sản phẩm');
+                return;
+            }
+
+            const actionNames = {
+                'activate': 'kích hoạt',
+                'deactivate': 'tạm dừng',
+                'delete': 'xóa'
+            };
+
+            if (confirm(`Bạn có chắc chắn muốn ${actionNames[action]} ${selectedProducts.length} sản phẩm đã chọn?`)) {
+                // Add bulk action functionality via AJAX
+                console.log(`${action} products:`, selectedProducts);
+            }
+        }
+
+        // Update bulk action buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('.btn-outline-success').addEventListener('click', function() {
+                performBulkAction('activate');
+            });
+
+            document.querySelector('.btn-outline-warning').addEventListener('click', function() {
+                performBulkAction('deactivate');
+            });
+
+            document.querySelector('.btn-outline-danger').addEventListener('click', function() {
+                performBulkAction('delete');
             });
         });
     </script>

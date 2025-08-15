@@ -20,6 +20,37 @@ class OrderRepo extends BaseRepo implements IOrderRepo
      * Get cart by session ID with all related data
      * Ultra simplified - return the cart itself, let service handle the logic
      */
+
+    public function getAllOrderWithItems($customerName = null, $status = null, $sort = null, $direction = null){
+        
+        $query = $this->model->with('orderItems');
+        if($customerName){
+            $query = $query->where('customer_name', 'like',"%$customerName%");
+        }
+        if($status){
+            $query = $query->where('status', $status);
+        }
+        if($sort){
+            $direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
+            switch($sort){
+                case 'id':
+                case 'customer_name':
+                case 'update_at':
+                case 'total':
+                case 'payment_method':
+                case 'status':
+                    $query = $query->orderBy($sort, $direction);
+                    break;
+                default:
+                    $query = $query->orderBy('id', $direction);
+            }
+        }
+        else{
+            $query = $query->orderBy('id','desc');
+        }
+        return $query->paginate(12);
+    }
+
     public function getCartBySession($session_id)
     {
         return Cart::where('session_id', $session_id)
@@ -27,10 +58,6 @@ class OrderRepo extends BaseRepo implements IOrderRepo
             ->first();
     }
 
-    /**
-     * Get cart items with product variant details using pure relationships
-     * Keep this for backward compatibility
-     */
     public function getCartItemsWithVariants($session_id)
     {
         $cart = $this->getCartBySession($session_id);

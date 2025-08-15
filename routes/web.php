@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
@@ -32,11 +34,19 @@ Route::prefix('/checkout')->name('checkout.')->group(function(){
 
 Route::prefix('admin')->name('Admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index']);
+    Route::prefix('/categories')->name('categories.')->group(function(){
+        Route::get('/',[AdminCategoryController::class,'showAll'])->name('list');
+        Route::put('/{id}',[AdminCategoryController::class, 'updateCategory'])->name('update');
+        Route::delete('/{id}',[AdminCategoryController::class, 'deleteCategory'])->name('delete');
+    });
     Route::prefix('/products')->name('products.')->group(function () {
         Route::get('/', [AdminProductController::class, 'index'])->name('list');
         Route::get('/new', [AdminController::class, 'showNewProduct'])->name('showNew');
         Route::post('/new', [AdminProductController::class, 'newProduct'])->name('new');
         Route::get('/{id}/edit', [AdminProductController::class, 'edit'])->name('edit');
         Route::put('/{id}', [AdminProductController::class, 'update'])->name('update');
+    });
+    Route::prefix('/order')->name('order.')->group(function(){
+        Route::get('/',[AdminOrderController::class, 'getAll']);
     });
 });

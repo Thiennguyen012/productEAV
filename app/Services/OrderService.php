@@ -21,6 +21,13 @@ class OrderService implements IOrderService
         $this->orderItemRepo = $orderItemRepo;
     }
 
+    public function getAllOrderWithItems(Request $request){
+        $customerName = $request->input('customer_name');
+        $status = $request->input('status');
+        $sort = $request->input('sort');
+        $direction = $request->input('direction');
+        return $this->orderRepo->getAllOrderWithItems($customerName, $status, $sort, $direction);
+    }
 
     public function newOrder($session_id, Request $request)
     {
