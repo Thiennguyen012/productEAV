@@ -26,6 +26,11 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             transform: translateY(-2px);
         }
+        .cart-item.removing {
+            opacity: 0;
+            transform: translateX(-100%);
+            transition: all 0.5s ease;
+        }
         .product-image {
             width: 100px;
             height: 100px;
@@ -84,6 +89,44 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
             color: white;
+        }
+
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .custom-alert.fade-out {
+            animation: slideOut 0.3s ease;
         }
         .empty-cart {
             text-align: center;
@@ -372,19 +415,27 @@
 
         function showAlert(message, type = 'success') {
             const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;';
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show custom-alert`;
             alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(alertDiv);
 
+            // Different timeout for different alert types
+            const timeout = type === 'success' ? 2500 : 4000; // Success: 2.5s, Error: 4s
+            
             setTimeout(() => {
                 if (alertDiv.parentNode) {
-                    alertDiv.remove();
+                    alertDiv.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 300); // Wait for fade animation
                 }
-            }, 5000);
+            }, timeout);
         }
 
         function updateQuantity(itemId, newQuantity) {
@@ -417,30 +468,25 @@
                 hideLoading();
                 if (data.success) {
                     showAlert(data.message || 'Cập nhật thành công');
-                    // Reload page to update totals
-                    location.reload();
+                    // Delay reload to show message
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
                     showAlert(data.message || 'Có lỗi xảy ra', 'danger');
-                    // Reset to original quantity
-                    location.reload();
+                    // Reload immediately for errors
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
                 }
             })
             .catch(error => {
                 hideLoading();
-                console.error('Error:', error);
                 showAlert(error.message || 'Có lỗi xảy ra khi cập nhật giỏ hàng', 'danger');
-                // Reset to original quantity
-                location.reload();
-            });
-        }
-                } else {
-                    showAlert(data.message || 'Có lỗi xảy ra', 'danger');
-                }
-            })
-            .catch(error => {
-                hideLoading();
-                console.error('Error:', error);
-                showAlert('Có lỗi xảy ra khi cập nhật giỏ hàng', 'danger');
+                // Reload after error message
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
             });
         }
 
@@ -461,18 +507,35 @@
             .then(data => {
                 hideLoading();
                 if (data.success) {
-                    // Remove item from DOM
-                    document.querySelector(`[data-item-id="${itemId}"]`).remove();
-                    
-                    // Check if cart is empty
-                    if (document.querySelectorAll('.cart-item').length === 0) {
-                        location.reload();
-                    } else {
-                        // Update totals
-                        updateCartTotals();
-                    }
-                    
                     showAlert('Đã xóa sản phẩm khỏi giỏ hàng');
+                    
+                    // Remove item from DOM with animation
+                    const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                    if (itemElement) {
+                        itemElement.style.transition = 'opacity 0.5s ease';
+                        itemElement.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            itemElement.remove();
+                            
+                            // Check if cart is empty
+                            if (document.querySelectorAll('.cart-item').length === 0) {
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                // Update totals without full reload
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            }
+                        }, 500);
+                    } else {
+                        // Fallback: reload after message
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    }
                 } else {
                     showAlert(data.message || 'Có lỗi xảy ra', 'danger');
                 }

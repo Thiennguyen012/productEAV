@@ -24,7 +24,7 @@ Route::prefix('/cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'showCart'])->name('show');
     Route::post('/add', [CartController::class, 'addToCart'])->name('add');
     Route::put('/update/{id}', [CartController::class, 'updateItem'])->name('update');
-    Route::delete('remove/{id}', [CartController::class, 'deleteCartItem'])->name('remove');
+    Route::delete('/remove/{id}', [CartController::class, 'deleteCartItem'])->name('remove');
 });
 
 Route::prefix('/checkout')->name('checkout.')->group(function () {
