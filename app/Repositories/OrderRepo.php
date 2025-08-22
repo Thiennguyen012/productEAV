@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Order\Order;
 use App\Models\Cart\Cart;
 use App\Repositories\Interfaces\IOrderRepo;
+use Illuminate\Http\Request;
 
 class OrderRepo extends BaseRepo implements IOrderRepo
 {
@@ -74,5 +75,9 @@ class OrderRepo extends BaseRepo implements IOrderRepo
                 'variant_name' => $item->productVariant->options->pluck('value')->join(' / ')
                     ?: $item->productVariant->product->name ?? 'Default',
             ]) ?? collect([]);
+    }
+
+    public function getOrderWithItemsById($orderId){
+        return $this->model->with('orderItems')->find($orderId);
     }
 }

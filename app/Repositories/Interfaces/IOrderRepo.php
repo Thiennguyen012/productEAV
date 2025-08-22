@@ -2,6 +2,8 @@
 
 namespace App\Repositories\Interfaces;
 
+use Illuminate\Http\Request;
+
 interface IOrderRepo extends IBaseRepo
 {
     /**
@@ -15,4 +17,6 @@ interface IOrderRepo extends IBaseRepo
      * Get cart items with product variant details using eager loading
      */
     public function getCartItemsWithVariants($session_id);
+
+    public function getOrderWithItemsById($orderId);
 }

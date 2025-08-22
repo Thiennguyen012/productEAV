@@ -51,5 +51,7 @@ Route::prefix('admin')->name('Admin.')->group(function () {
     });
     Route::prefix('/order')->name('order.')->group(function () {
         Route::get('/', [AdminOrderController::class, 'getAll']);
+        Route::get('/{id}',[AdminOrderController::class, 'getOrderById']);
+        Route::put('/{id}',[AdminOrderController::class, 'updateOrder']);
     });
 });

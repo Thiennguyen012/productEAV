@@ -455,17 +455,35 @@
         function viewOrderDetails(orderId) {
             $('#orderDetailsModal').modal('show');
             
-            // Load order details via AJAX
-            $.get(`/admin/orders/${orderId}`)
+            // Show loading state
+            $('#orderDetailsContent').html(`
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-2">Đang tải chi tiết đơn hàng...</p>
+                </div>
+            `);
+            
+            // Load order details via AJAX  
+            $.get(`/admin/order/${orderId}`)
                 .done(function(data) {
                     $('#orderDetailsContent').html(data);
                 })
-                .fail(function() {
+                .fail(function(xhr) {
+                    let errorMessage = 'Không thể tải chi tiết đơn hàng';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    
                     $('#orderDetailsContent').html(`
                         <div class="text-center text-danger p-4">
                             <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <h5>Không thể tải chi tiết đơn hàng</h5>
-                            <p>Vui lòng thử lại sau.</p>
+                            <h5>Lỗi tải dữ liệu</h5>
+                            <p>${errorMessage}</p>
+                            <button class="btn btn-primary" onclick="viewOrderDetails(${orderId})">
+                                <i class="fas fa-redo me-2"></i>Thử lại
+                            </button>
                         </div>
                     `);
                 });
@@ -489,16 +507,24 @@
             const originalHtml = button.html();
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
             $.ajax({
-                url: `/admin/orders/${orderId}/status`,
+                url: `/admin/order/${orderId}`,
                 method: 'PUT',
-                data: { status: newStatus },
+                data: { 
+                    status: newStatus 
+                },
                 success: function(response) {
                     if (response.success) {
-                        showAlert('success', response.message);
-                        setTimeout(() => location.reload(), 1000);
+                        showAlert('success', response.message || 'Cập nhật trạng thái thành công!');
+                        setTimeout(() => location.reload(), 1500);
                     } else {
-                        showAlert('danger', response.message);
+                        showAlert('danger', response.message || 'Cập nhật thất bại');
                         button.prop('disabled', false).html(originalHtml);
                     }
                 },

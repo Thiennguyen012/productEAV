@@ -9,4 +9,8 @@ interface IOrderService
     public function getAllOrderWithItems(Request $request);
 
     public function newOrder($session_id, Request $request);
+
+    public function getOrderWithItemsById($orderId);
+
+    public function updateOrderById($orderId, Request $request);
 }

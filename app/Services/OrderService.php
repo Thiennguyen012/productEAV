@@ -21,7 +21,8 @@ class OrderService implements IOrderService
         $this->orderItemRepo = $orderItemRepo;
     }
 
-    public function getAllOrderWithItems(Request $request){
+    public function getAllOrderWithItems(Request $request)
+    {
         $customerName = $request->input('customer_name');
         $status = $request->input('status');
         $sort = $request->input('sort');
@@ -95,7 +96,7 @@ class OrderService implements IOrderService
 
                 // Load order items để trả về đầy đủ thông tin
                 $newOrder->load('orderItems');
-                
+
                 return $newOrder;
             });
         } catch (Exception $e) {
@@ -120,5 +121,91 @@ class OrderService implements IOrderService
         }
 
         return $productName;
+    }
+
+    public function getOrderWithItemsById($orderId)
+    {
+        return $this->orderRepo->getOrderWithItemsById($orderId);
+    }
+
+    public function updateOrderById($orderId, Request $request)
+    {
+        try {
+            // Lấy order hiện tại để kiểm tra trạng thái
+            $currentOrder = $this->orderRepo->find($orderId);
+
+            if (!$currentOrder) {
+                throw new Exception('Đơn hàng không tồn tại');
+            }
+
+            $newStatus = $request->input('status');
+            $currentStatus = $currentOrder->status ?? 'pending';
+
+            // Kiểm tra tính hợp lệ của việc chuyển trạng thái
+            if (!$this->isValidStatusTransition($currentStatus, $newStatus)) {
+                throw new Exception($this->getInvalidTransitionMessage($currentStatus, $newStatus));
+            }
+
+            $arrayData = [
+                'status' => $newStatus,
+            ];
+
+            return $this->orderRepo->update($orderId, $arrayData);
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * Kiểm tra xem có thể chuyển từ trạng thái hiện tại sang trạng thái mới không
+     */
+    private function isValidStatusTransition($currentStatus, $newStatus)
+    {
+        // Nếu trạng thái không thay đổi
+        if ($currentStatus === $newStatus) {
+            return false;
+        }
+
+        // Nếu đơn hàng đã hoàn thành hoặc đã hủy thì không thể thay đổi
+        if (in_array($currentStatus, ['delivered', 'cancelled'])) {
+            return false;
+        }
+
+        // Logic chuyển trạng thái hợp lệ
+        $validTransitions = [
+            'pending' => ['confirmed', 'cancelled'],
+            'confirmed' => ['shipping', 'cancelled'],
+            'shipping' => ['delivered', 'cancelled']
+        ];
+
+        return isset($validTransitions[$currentStatus]) &&
+            in_array($newStatus, $validTransitions[$currentStatus]);
+    }
+
+    /**
+     * Lấy thông báo lỗi khi chuyển trạng thái không hợp lệ
+     */
+    private function getInvalidTransitionMessage($currentStatus, $newStatus)
+    {
+        $statusNames = [
+            'pending' => 'Chờ xử lý',
+            'confirmed' => 'Đã xác nhận',
+            'shipping' => 'Đang giao hàng',
+            'delivered' => 'Đã giao hàng',
+            'cancelled' => 'Đã hủy'
+        ];
+
+        $currentName = $statusNames[$currentStatus] ?? $currentStatus;
+        $newName = $statusNames[$newStatus] ?? $newStatus;
+
+        if ($currentStatus === $newStatus) {
+            return "Đơn hàng đã ở trạng thái {$currentName}";
+        }
+
+        if (in_array($currentStatus, ['delivered', 'cancelled'])) {
+            return "Không thể thay đổi trạng thái đơn hàng đã {$currentName}";
+        }
+
+        return "Không thể chuyển từ trạng thái {$currentName} sang {$newName}";
     }
 }
