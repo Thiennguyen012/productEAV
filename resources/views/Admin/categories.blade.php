@@ -41,23 +41,6 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        .category-status {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-active {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status-inactive {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
         .btn-action {
             padding: 0.3rem 0.6rem;
             border-radius: 5px;
@@ -80,12 +63,6 @@
         .table td {
             vertical-align: middle;
             border-color: #eee;
-        }
-        .category-image {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 8px;
         }
     </style>
 </head>
@@ -118,7 +95,7 @@
     <div class="container my-4">
         <!-- Statistics Cards -->
         <div class="row mb-4">
-            <div class="col-md-4 col-sm-6">
+            <div class="col-md-12">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
                         <div class="stats-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
@@ -131,39 +108,13 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="stats-card">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h4 class="mb-0">{{ $categories ? $categories->where('is_active', 'true')->count() : 0 }}</h4>
-                            <small class="text-muted">Đang hoạt động</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="stats-card">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
-                            <i class="fas fa-pause-circle"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h4 class="mb-0">{{ $categories ? $categories->where('is_active', 'false')->count() : 0 }}</h4>
-                            <small class="text-muted">Tạm dừng</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Search and Filters -->
         <div class="search-box">
             <form method="GET" action="{{ request()->url() }}" id="filterForm">
                 <div class="row align-items-center">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text">
                                 <i class="fas fa-search"></i>
@@ -173,14 +124,7 @@
                                    placeholder="Tìm theo tên danh mục...">
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <select class="form-select" name="status">
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="true" {{ request('status') === 'true' ? 'selected' : '' }}>Đang hoạt động</option>
-                            <option value="false" {{ request('status') === 'false' ? 'selected' : '' }}>Tạm dừng</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <select class="form-select" name="sort">
                             <option value="">Sắp xếp theo</option>
                             <option value="id" {{ request('sort') == 'id' ? 'selected' : '' }}>ID</option>
@@ -203,7 +147,7 @@
         </div>
 
         <!-- Filter Summary -->
-        @if(request()->hasAny(['category_name', 'status', 'sort']))
+        @if(request()->hasAny(['category_name', 'sort']))
         <div class="row mb-3">
             <div class="col-12">
                 <div class="alert alert-info d-flex align-items-center">
@@ -212,11 +156,6 @@
                         <strong>Bộ lọc đang áp dụng:</strong>
                         @if(request('category_name'))
                             <span class="badge bg-primary ms-2">Tên: {{ request('category_name') }}</span>
-                        @endif
-                        @if(request('status'))
-                            <span class="badge bg-success ms-2">
-                                Trạng thái: {{ request('status') === 'true' ? 'Đang hoạt động' : 'Tạm dừng' }}
-                            </span>
                         @endif
                         @if(request('sort'))
                             <span class="badge bg-info ms-2">Sắp xếp: 
@@ -246,11 +185,10 @@
                     <thead>
                         <tr>
                             <th style="width: 100px;">ID</th>
-                            <th style="width: 80px;">Hình ảnh</th>
                             <th>Tên danh mục</th>
+                            <th>Slug</th>
                             <th>Mô tả</th>
-                            <th style="width: 120px;">Trạng thái</th>
-                            <th style="width: 130px;">Ngày tạo</th>
+                            <th style="width: 150px;">Ngày tạo</th>
                             <th style="width: 120px;">Thao tác</th>
                         </tr>
                     </thead>
@@ -262,30 +200,17 @@
                                     <strong class="text-primary">#{{ $category->id }}</strong>
                                 </td>
                                 <td>
-                                    @if($category->image)
-                                        <img src="{{ asset('images/' . $category->image) }}" 
-                                             alt="{{ $category->category_name }}"
-                                             class="category-image">
-                                    @else
-                                        <div class="category-image bg-light d-flex align-items-center justify-content-center">
-                                            <i class="fas fa-image text-muted"></i>
-                                        </div>
-                                    @endif
-                                </td>
-                                <td>
                                     <div>
                                         <strong>{{ $category->category_name }}</strong>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="text-muted">
-                                        {{ $category->description ? Str::limit($category->description, 50) : '-' }}
-                                    </div>
+                                    <code class="text-muted">{{ $category->slug }}</code>
                                 </td>
                                 <td>
-                                    <span class="category-status status-{{ $category->is_active === 'true' ? 'active' : 'inactive' }}">
-                                        {{ $category->is_active === 'true' ? 'Đang hoạt động' : 'Tạm dừng' }}
-                                    </span>
+                                    <div class="text-muted">
+                                        {{ $category->description ? Str::limit($category->description, 80) : '-' }}
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="text-center">
@@ -314,7 +239,7 @@
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="6" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="fas fa-tags fa-3x mb-3 opacity-25"></i>
                                         <h5>Chưa có danh mục nào</h5>
@@ -355,9 +280,9 @@
             });
         });
 
-        // Edit category (simple alert for now)
+        // Edit category (redirect to edit page)
         function editCategory(categoryId) {
-            alert('Chức năng chỉnh sửa danh mục #' + categoryId + ' sẽ được phát triển sau');
+            window.location.href = `/admin/categories/${categoryId}`;
         }
 
         // Delete category

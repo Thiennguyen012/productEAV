@@ -178,6 +178,17 @@
                                 @endforeach
                             </div>
                         @endif
+                        
+                        <!-- Stock info -->
+                        <div class="stock-info mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-box me-1"></i>
+                                Tồn kho: <span class="fw-bold">{{ $item->productVariant->quantity }}</span>
+                                @if($item->quantity >= $item->productVariant->quantity)
+                                    <span class="text-warning">(Đã đạt giới hạn)</span>
+                                @endif
+                            </small>
+                        </div>
                     </div>
                 @else
                     <div class="product-details">
@@ -215,15 +226,17 @@
                         <input type="number" 
                                value="{{ $item->quantity }}" 
                                min="1" 
-                               max="99"
+                               max="{{ $item->productVariant ? $item->productVariant->quantity : 99 }}"
                                onchange="updateQuantity({{ $item->id }}, this.value)"
                                class="form-control text-center mx-2"
-                               style="width: 60px;">
+                               style="width: 60px;"
+                               title="Tồn kho: {{ $item->productVariant ? $item->productVariant->quantity : 'N/A' }}">
                         
                         <button type="button" 
                                 class="btn btn-outline-secondary btn-sm"
                                 onclick="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})"
-                                {{ $item->quantity >= 99 ? 'disabled' : '' }}>
+                                {{ ($item->productVariant && $item->quantity >= $item->productVariant->quantity) ? 'disabled' : '' }}
+                                title="{{ ($item->productVariant && $item->quantity >= $item->productVariant->quantity) ? 'Đã đạt giới hạn tồn kho' : 'Tăng số lượng' }}">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
@@ -392,12 +405,34 @@
                 },
                 body: JSON.stringify({ quantity: newQuantity })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'Có lỗi xảy ra');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 hideLoading();
                 if (data.success) {
+                    showAlert(data.message || 'Cập nhật thành công');
                     // Reload page to update totals
                     location.reload();
+                } else {
+                    showAlert(data.message || 'Có lỗi xảy ra', 'danger');
+                    // Reset to original quantity
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showAlert(error.message || 'Có lỗi xảy ra khi cập nhật giỏ hàng', 'danger');
+                // Reset to original quantity
+                location.reload();
+            });
+        }
                 } else {
                     showAlert(data.message || 'Có lỗi xảy ra', 'danger');
                 }

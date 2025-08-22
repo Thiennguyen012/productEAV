@@ -25,6 +25,12 @@ class CartController extends Controller
     }
     public function addToCart(Request $request)
     {
+        // Validate input
+        $request->validate([
+            'product_variant_id' => 'required|integer',
+            'quantity' => 'required|integer|min:1'
+        ]);
+
         // Tạo hoặc lấy session cart ID
         if (!$request->session()->has('cart_session_id')) {
             // Nếu chưa có session cart, tạo mới
@@ -36,43 +42,50 @@ class CartController extends Controller
         }
 
         $result = $this->cartService->addToCart($session_id, $request);
-        if ($result) {
+
+        if ($result['success']) {
             return response()->json([
                 'success' => true,
-                'message' => 'Thêm sản phẩm vào giỏ hàng thành công !',
+                'message' => $result['message'],
                 'cart_count' => $this->cartService->getCartCount($session_id),
             ]);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể thêm sản phẩm vào giỏ hàng',
+                'message' => $result['message'],
             ], 400);
         }
     }
     public function updateItem($itemId, Request $request)
     {
+        // Validate input
+        $request->validate([
+            'quantity' => 'required|integer|min:1'
+        ]);
+
         $result = $this->cartItemService->updateItem($itemId, $request);
-        if ($result) {
+
+        if ($result['success']) {
             return response()->json([
                 'success' => true,
-                'message' => 'Cập nhật giỏ hàng thành công!'
+                'message' => $result['message']
             ]);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Cập nhật giỏ hàng thất bại!'
+                'message' => $result['message']
             ], 400);
         }
     }
-    public function deleteCartItem($itemId){
+    public function deleteCartItem($itemId)
+    {
         $result = $this->cartItemService->delteItem($itemId);
-        if($result){
+        if ($result) {
             return response()->json([
                 'success' => true,
                 'message' => 'Xóa sản phẩm khỏi giỏ hàng thành công!',
             ]);
-        }
-        else{
+        } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Xóa sản phẩm khỏi giỏ hàng thất bại!'

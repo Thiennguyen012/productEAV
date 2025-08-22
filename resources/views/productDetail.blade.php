@@ -619,6 +619,33 @@
             return Array.from(availableOptionIds);
         }
 
+        // Show stock limit message
+        function showStockLimitMessage(maxStock) {
+            // Remove existing stock messages
+            const existingMsg = document.querySelector('.stock-limit-message');
+            if (existingMsg) {
+                existingMsg.remove();
+            }
+
+            // Create and show new message
+            const message = document.createElement('div');
+            message.className = 'alert alert-warning stock-limit-message mt-2';
+            message.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Chỉ còn <strong>${maxStock}</strong> sản phẩm trong kho
+            `;
+            
+            const quantityContainer = document.querySelector('#quantityInput').closest('.mb-3');
+            quantityContainer.appendChild(message);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (message && message.parentNode) {
+                    message.remove();
+                }
+            }, 3000);
+        }
+
         function clearSelections() {
             // Clear all selections
             selectedOptions = {};
@@ -695,7 +722,20 @@
                 
                 increaseBtn.addEventListener('click', function() {
                     let currentValue = parseInt(quantityInput.value);
-                    if (currentValue < 999) {
+                    const selectedVariantId = document.getElementById('selectedProductVariantId').value;
+                    
+                    if (selectedVariantId) {
+                        // Find the selected variant
+                        const selectedVariant = variants.find(v => v.id == selectedVariantId);
+                        if (selectedVariant && currentValue < selectedVariant.quantity) {
+                            currentValue++;
+                            quantityInput.value = currentValue;
+                            selectedQuantityHidden.value = currentValue;
+                        } else if (selectedVariant) {
+                            // Show stock limit message
+                            showStockLimitMessage(selectedVariant.quantity);
+                        }
+                    } else if (currentValue < 999) {
                         currentValue++;
                         quantityInput.value = currentValue;
                         selectedQuantityHidden.value = currentValue;
@@ -706,7 +746,19 @@
                 quantityInput.addEventListener('change', function() {
                     let value = parseInt(this.value);
                     if (value < 1) value = 1;
-                    if (value > 999) value = 999;
+                    
+                    const selectedVariantId = document.getElementById('selectedProductVariantId').value;
+                    if (selectedVariantId) {
+                        // Find the selected variant and check stock
+                        const selectedVariant = variants.find(v => v.id == selectedVariantId);
+                        if (selectedVariant && value > selectedVariant.quantity) {
+                            value = selectedVariant.quantity;
+                            showStockLimitMessage(selectedVariant.quantity);
+                        }
+                    } else if (value > 999) {
+                        value = 999;
+                    }
+                    
                     this.value = value;
                     selectedQuantityHidden.value = value;
                 });
@@ -739,7 +791,14 @@
                             quantity: parseInt(formData.get('quantity'))
                         })
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || 'Có lỗi xảy ra');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             // Show success message
@@ -784,13 +843,41 @@
                         btnText.textContent = 'Lỗi!';
                         btnText.className = 'text-danger';
                         
+                        // Show detailed error message
+                        let errorMessage = 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!';
+                        
+                        // Try to parse error response
+                        if (error.message && error.message !== 'Có lỗi xảy ra') {
+                            errorMessage = error.message;
+                        }
+                        
+                        // Show error toast if Bootstrap is available
+                        if (typeof bootstrap !== 'undefined') {
+                            const errorToastHtml = `
+                                <div class="toast align-items-center text-white bg-danger border-0" role="alert" 
+                                     style="position: fixed; top: 20px; right: 20px; z-index: 1050;">
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <i class="fas fa-exclamation-circle me-2"></i>
+                                            ${errorMessage}
+                                        </div>
+                                        <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                                                data-bs-dismiss="toast"></button>
+                                    </div>
+                                </div>
+                            `;
+                            document.body.insertAdjacentHTML('beforeend', errorToastHtml);
+                            const errorToast = new bootstrap.Toast(document.querySelector('.toast:last-child'));
+                            errorToast.show();
+                        } else {
+                            alert(errorMessage);
+                        }
+                        
                         setTimeout(() => {
                             submitBtn.disabled = false;
                             btnText.textContent = originalText;
                             btnText.className = '';
                         }, 2000);
-                        
-                        alert('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!');
                     });
                 });
             }

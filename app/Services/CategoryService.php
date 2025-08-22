@@ -13,8 +13,13 @@ class CategoryService implements ICategoryService
     {
         $this->categoryRepo = $categoryRepo;
     }
-    public function getCategoriesList(){
+    public function getCategoriesList()
+    {
         return $this->categoryRepo->all();
+    }
+    public function getCategoryById($categoryId)
+    {
+        return $this->categoryRepo->find($categoryId);
     }
     public function newCategory(Request $request)
     {
@@ -25,7 +30,7 @@ class CategoryService implements ICategoryService
         ]);
     }
 
-    public function updateCategory($categoryId,Request $request)
+    public function updateCategory($categoryId, Request $request)
     {
         $category = $this->categoryRepo->find($categoryId)->update([
             'category_name' => $request->input('category_name'),
