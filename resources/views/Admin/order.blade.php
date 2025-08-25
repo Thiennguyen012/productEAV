@@ -42,36 +42,63 @@
             overflow: hidden;
         }
         .order-status {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
+            padding: 0.35rem 0.75rem !important;
+            border-radius: 12px !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            display: inline-block !important;
+            letter-spacing: 0.5px !important;
+            border: none !important;
         }
         .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e) !important;
+            color: #2d3436 !important;
+            box-shadow: 0 2px 4px rgba(253, 203, 110, 0.3) !important;
         }
         .status-confirmed {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: linear-gradient(135deg, #74b9ff, #0984e3) !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(116, 185, 255, 0.4) !important;
         }
         .status-shipping {
-            background-color: #cce5ff;
-            color: #004085;
-            border: 1px solid #99d6ff;
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7) !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(162, 155, 254, 0.4) !important;
         }
         .status-delivered {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: linear-gradient(135deg, #00b894, #00a085) !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(0, 184, 148, 0.4) !important;
         }
         .status-cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: linear-gradient(135deg, #fd79a8, #e84393) !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(253, 121, 168, 0.4) !important;
+        }
+        .payment-cod {
+            background: linear-gradient(135deg, #fdcb6e, #e17055) !important;
+            color: white !important;
+            padding: 0.35rem 0.75rem !important;
+            border-radius: 12px !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            display: inline-block !important;
+            letter-spacing: 0.5px !important;
+            box-shadow: 0 2px 4px rgba(253, 203, 110, 0.3) !important;
+        }
+        .payment-transfer {
+            background: linear-gradient(135deg, #00b894, #00a085) !important;
+            color: white !important;
+            padding: 0.35rem 0.75rem !important;
+            border-radius: 12px !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            display: inline-block !important;
+            letter-spacing: 0.5px !important;
+            box-shadow: 0 2px 4px rgba(0, 184, 148, 0.3) !important;
         }
         .btn-action {
             padding: 0.3rem 0.6rem;
@@ -326,12 +353,12 @@
                                     <strong class="text-success">{{ number_format($order->total) }}₫</strong>
                                 </td>
                                 <td>
-                                    <span class="badge {{ $order->payment_method == 'cod' ? 'bg-warning' : 'bg-info' }}">
+                                    <span class="badge {{ $order->payment_method == 'offline' ? 'payment-cod' : 'payment-transfer' }}">
                                         {{ $order->payment_method == 'offline' ? 'COD' : 'Chuyển khoản' }}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="order-status status-{{ $order->status ?? 'pending' }}">
+                                    <span class="badge order-status status-{{ $order->status ?? 'pending' }}">
                                         {{ 
                                             match($order->status ?? 'pending') {
                                                 'pending' => 'Chờ xử lý',
