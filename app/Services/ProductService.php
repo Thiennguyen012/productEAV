@@ -24,11 +24,16 @@ class ProductService implements IProductService
     public function listProduct(Request $request)
     {
         $productName = $request->input('product_name');
+        $search = $request->input('search');
         $category_id = $request->input('category_id');
         $status = $request->input('status');
         $sort = $request->input('sort');
         $direction = $request->input('direction');
-        $result = $this->productRepo->listProduct($productName, $category_id, $status, $sort, $direction);
+
+        // Ưu tiên search parameter, fallback về product_name
+        // $searchTerm = $search ?: $productName;
+
+        $result = $this->productRepo->listProduct($search, $category_id, $status, $sort, $direction);
         return $result;
     }
     public function getProductWithVariants(Request $request)

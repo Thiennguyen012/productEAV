@@ -16,27 +16,27 @@ class ProductRepo extends BaseRepo implements IProductRepo
     public function listProduct($productName = null, $category_id = null, $status = null, $sort = null, $direction = null)
     {
         $query =  $this->model->with(['category', 'variants.options', 'variantGroups.options']);
-        if($productName){
-            $query = $query->where('product_name', 'like', "%$productName%");
+        if ($productName) {
+            // Sử dụng LIKE với SQLite (case-insensitive search)
+            $query = $query->where('product_name', 'LIKE', "%{$productName}%");
         }
-        if($category_id){
+        if ($category_id) {
             $query = $query->where('category_id', $category_id);
         }
-        if($status){
+        if ($status) {
             $query = $query->where('is_active', $status);
         }
-        if($sort){
-            $direction = strtolower($direction) === 'desc' ? 'desc': 'asc';
-            switch($sort){
+        if ($sort) {
+            $direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
+            switch ($sort) {
                 case 'product_name':
                 case 'category_id':
                     $query = $query->orderBy($sort, $direction);
                 default:
                     $query = $query->orderBy('id', $direction);
             }
-        }
-        else{
-            $query = $query->orderBy('id','desc');
+        } else {
+            $query = $query->orderBy('id', 'desc');
         }
         return $query->paginate(12);
     }

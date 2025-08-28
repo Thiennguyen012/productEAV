@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Interfaces\ICategoryService;
 use App\Services\Interfaces\IProductService;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    protected $productService;
-    public function __construct(IProductService $productService)
+    protected $productService, $categoryService;
+    public function __construct(IProductService $productService, ICategoryService $categoryService)
     {
         $this->productService = $productService;
+        $this->categoryService = $categoryService;
     }
 
     public function index(Request $request)
     {
         $products = $this->productService->listProduct($request);
-        return view('products', compact('products'));
+        $category = $this->categoryService->getCategoriesList();
+        return view('products', compact('products','category'));
     }
     public function getProductDetail($slug)
     {

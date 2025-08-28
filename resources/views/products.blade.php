@@ -24,6 +24,37 @@
     <div class="container mt-4">
         <h1 class="mb-4">Danh sách sản phẩm</h1>
         
+        <!-- Simple Search Bar -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8">
+                <form action="{{ route('products.showAll') }}" method="GET" class="d-flex">
+                    <input type="text" 
+                           name="search" 
+                           class="form-control me-2" 
+                           placeholder="Tìm kiếm sản phẩm theo tên..." 
+                           value="{{ request('search') }}"
+                           style="border-radius: 25px; padding: 10px 20px;">
+                    <button type="submit" class="btn btn-primary" style="border-radius: 25px; padding: 10px 20px;">
+                        Tìm kiếm
+                    </button>
+                    @if(request('search'))
+                        <a href="{{ route('products.showAll') }}" class="btn btn-outline-secondary ms-2" style="border-radius: 25px; padding: 10px 20px;">
+                            Xóa
+                        </a>
+                    @endif
+                </form>
+                
+                @if(request('search'))
+                    <div class="mt-2 text-muted text-center">
+                        Kết quả tìm kiếm cho: <strong>"{{ request('search') }}"</strong>
+                        @if(method_exists($products, 'total') && $products->total() > 0)
+                            <span class="badge bg-primary ms-2">{{ $products->total() }} sản phẩm</span>
+                        @endif
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <div class="row">
             @forelse($products as $product)
                 <div class="col-lg-4 col-md-6 mb-4">
@@ -100,8 +131,16 @@
             @empty
                 <div class="col-12">
                     <div class="alert alert-info text-center">
-                        <h4>Không có sản phẩm nào</h4>
-                        <p>Hiện tại chưa có sản phẩm nào trong hệ thống.</p>
+                        @if(request('search'))
+                            <h4>Không tìm thấy sản phẩm</h4>
+                            <p>Không có sản phẩm nào phù hợp với từ khóa "<strong>{{ request('search') }}</strong>"</p>
+                            <a href="{{ route('products.showAll') }}" class="btn btn-primary">
+                                Xem tất cả sản phẩm
+                            </a>
+                        @else
+                            <h4>Không có sản phẩm nào</h4>
+                            <p>Hiện tại chưa có sản phẩm nào trong hệ thống.</p>
+                        @endif
                     </div>
                 </div>
             @endforelse
@@ -110,7 +149,7 @@
         <!-- Pagination -->
         @if(method_exists($products, 'links') && $products->hasPages())
             <div class="d-flex justify-content-center my-4">
-                {{ $products->links('pagination::bootstrap-4') }}
+                {{ $products->appends(request()->query())->links('pagination::bootstrap-4') }}
             </div>
         @endif
         
