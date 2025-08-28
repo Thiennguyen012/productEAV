@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh sách sản phẩm</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Compact pagination styling */
         .pagination {
@@ -17,6 +18,43 @@
         .pagination .page-link {
             min-width: 2rem;
             text-align: center;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .category-item {
+            display: block;
+            padding: 8px 15px;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .category-item:hover {
+            background-color: #e9ecef;
+            color: #495057;
+            text-decoration: none;
+        }
+        
+        .category-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .filter-header {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
         }
     </style>
 </head>
@@ -34,12 +72,18 @@
                            placeholder="Tìm kiếm sản phẩm theo tên..." 
                            value="{{ request('search') }}"
                            style="border-radius: 25px; padding: 10px 20px;">
+                    
+                    <!-- Preserve category filter -->
+                    @if(request('category_id'))
+                        <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+                    @endif
+                    
                     <button type="submit" class="btn btn-primary" style="border-radius: 25px; padding: 10px 20px;">
-                        Tìm kiếm
+                        <i class="fas fa-search"></i> Tìm kiếm
                     </button>
-                    @if(request('search'))
+                    @if(request('search') || request('category_id'))
                         <a href="{{ route('products.showAll') }}" class="btn btn-outline-secondary ms-2" style="border-radius: 25px; padding: 10px 20px;">
-                            Xóa
+                            <i class="fas fa-times"></i> Xóa
                         </a>
                     @endif
                 </form>
@@ -56,6 +100,51 @@
         </div>
 
         <div class="row">
+            <!-- Sidebar Filter -->
+            <div class="col-lg-3 col-md-4">
+                <div class="sidebar">
+                    <h5 class="filter-header">
+                        <i class="fas fa-filter"></i> Lọc sản phẩm
+                    </h5>
+                    
+                    <!-- Category Filter -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Danh mục</h6>
+                        <a href="{{ route('products.showAll') }}" 
+                           class="category-item {{ !request('category_id') ? 'active' : '' }}">
+                            <i class="fas fa-th-large"></i> Tất cả danh mục
+                            <span class="badge bg-secondary float-end">{{ $products->total() ?? $products->count() }}</span>
+                        </a>
+                        
+                        @if(isset($category) && $category->count() > 0)
+                            @foreach($category as $cat)
+                                @php
+                                    $categoryParams = request()->query();
+                                    $categoryParams['category_id'] = $cat->id;
+                                    $categoryUrl = route('products.showAll', $categoryParams);
+                                @endphp
+                                <a href="{{ $categoryUrl }}" 
+                                   class="category-item {{ request('category_id') == $cat->id ? 'active' : '' }}">
+                                    <i class="fas fa-tag"></i> {{ $cat->category_name }}
+                                </a>
+                            @endforeach
+                        @endif
+                    </div>
+                    
+                    <!-- Clear Filters -->
+                    @if(request('category_id') || request('search'))
+                        <div class="mb-3">
+                            <a href="{{ route('products.showAll') }}" class="btn btn-outline-danger btn-sm w-100">
+                                <i class="fas fa-times"></i> Xóa tất cả bộ lọc
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            
+            <!-- Products Content -->
+            <div class="col-lg-9 col-md-8">
+                <div class="row">
             @forelse($products as $product)
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card h-100">
@@ -144,33 +233,35 @@
                     </div>
                 </div>
             @endforelse
-        </div>
-        
-        <!-- Pagination -->
-        @if(method_exists($products, 'links') && $products->hasPages())
-            <div class="d-flex justify-content-center my-4">
-                {{ $products->appends(request()->query())->links('pagination::bootstrap-4') }}
-            </div>
-        @endif
-        
-        <!-- Products Info -->
-        <div class="mt-4">
-            <div class="alert alert-light">
-                @if(method_exists($products, 'total'))
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>Hiển thị:</strong> {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} 
-                            trong tổng số {{ $products->total() }} sản phẩm
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <strong>Trang:</strong> {{ $products->currentPage() }} / {{ $products->lastPage() }}
-                        </div>
+                </div>
+                
+                <!-- Pagination -->
+                @if(method_exists($products, 'links') && $products->hasPages())
+                    <div class="d-flex justify-content-center my-4">
+                        {{ $products->appends(request()->query())->links('pagination::bootstrap-4') }}
                     </div>
-                @else
-                    <strong>Tổng số sản phẩm:</strong> {{ $products->count() }}
                 @endif
-            </div>
-        </div>
+                
+                <!-- Products Info -->
+                <div class="mt-4">
+                    <div class="alert alert-light">
+                        @if(method_exists($products, 'total'))
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Hiển thị:</strong> {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} 
+                                    trong tổng số {{ $products->total() }} sản phẩm
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <strong>Trang:</strong> {{ $products->currentPage() }} / {{ $products->lastPage() }}
+                                </div>
+                            </div>
+                        @else
+                            <strong>Tổng số sản phẩm:</strong> {{ $products->count() }}
+                        @endif
+                    </div>
+                </div>
+            </div> <!-- End col-lg-9 -->
+        </div> <!-- End main row -->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
